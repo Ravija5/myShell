@@ -91,13 +91,11 @@ int main(int argc, char *argv[], char *envp[])
             continue;
         }
 
-
         //Tokenise the command line treating 'whitespace' as delimiter
         char** tokenised_line = tokenise(line, " ");
 
         //Expand the tokenised line for wildcards
         char** expanded_line = fileNameExpand(tokenised_line);
-
 
         if(strcmp(expanded_line[0],"pwd") == 0){  //Implementing pwd
             addToCommandHistory(tokenised_line[0], nextSequence++);
@@ -131,8 +129,6 @@ int main(int argc, char *argv[], char *envp[])
 
             //File Descriptor RELATED
             int fd[2];
-            //char *message = "";
-
             // create pipe descriptors
             if (pipe(fd) == -1){
                 fprintf(stderr, "Pipe Failed" );
@@ -148,13 +144,10 @@ int main(int argc, char *argv[], char *envp[])
                     printf("Returns %d\n", WEXITSTATUS(stat));
 
 
-                    //PARENT - reading only, so close the write-descriptor
-                    close(fd[1]);
-                    // now read the data (will block until it succeeds)
+                    close(fd[1]); //PARENT - reading only, so close the write-descriptor
                     char recd_message[1000];
                     read(fd[0], recd_message, 1000);
-                    // close the read-descriptor
-                    close(fd[0]);
+                    close(fd[0]); // close the read-descriptor
                     if (WEXITSTATUS(stat) == 0) {
                         D(printf("PARENT received message: %s\n", recd_message));
                         addToCommandHistory(recd_message, nextSequence++);
@@ -203,7 +196,6 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
     }else{
         //Going through each Directory
         for(int i = 0 ; path[i] != NULL; i++){
-
             char* D = path[i];
             sprintf(D, "%s/%s", path[i], args[0]);
             if( (strcmp(D,path[i]) == 0) && isExecutable(D) ){
@@ -224,14 +216,12 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
         printf("Running %s ...\n", cmd);
         printf("--------------------\n");
 
-        // CHILD - writing only, so close read-descriptor.
-        close(fd[0]);
+
+        close(fd[0]);// CHILD - writing only, so close read-descriptor.
         // send the childID on the write-descriptor.
-        char* X = "hello there what!";
-        write(fd[1], untokenised_line , strlen(untokenised_line)+1);
+        write(fd[1], untokenised_line, strlen(untokenised_line)+1);
         D(printf("CHILD (%d) send message: %s\n", getpid(), untokenised_line));
-        // close the write descriptor
-        close(fd[1]);
+        close(fd[1]);// close the write descriptor
 
         int newfd;
         if(i > 2 && strcmp(args[last_token_index - 1], ">") == 0){
