@@ -47,6 +47,7 @@ void execute(char **, char **, char **, char*, int[]);
 
 // Global Data
 
+static char *const HOME_DIR = "/Users/manishm";
 int nextSequence=0;
 
 //CD - changing using .. NOTE: maybe cause of setenv in wordexp
@@ -108,7 +109,7 @@ int main(int argc, char *argv[], char *envp[])
             addToCommandHistory(tokenised_line[0], nextSequence++);
             D(printf("NEXT SEQ is : %d\n" , nextSequence));
             if(expanded_line[1] == NULL){
-                setenv("HOME","/Users/manishm",1);
+                setenv("HOME", HOME_DIR, 1);
                 char* home = getenv("HOME");
                 D(printf("Changed to home directory : %s\n", home));
                 chdir(home);
@@ -398,7 +399,7 @@ char** fileNameExpand(char **tokens){
             if(ch == '*' || ch == '?' || ch == '[' || ch == '~'){
                 //expand the wildcard
                 wildcards_found = 1;
-                setenv("HOME","/Users/manishm",1);
+                setenv("HOME", HOME_DIR, 1);
                 wordexp_t wordexpbuf;
                 int returnVal = wordexp(tokens[i], &wordexpbuf , 0);
 
