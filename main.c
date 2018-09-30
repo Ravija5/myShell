@@ -12,10 +12,13 @@ void testGetCommandFromHistory();
 
 void testCleanCommandHistory();
 
+void testSeqOfLastCommand();
+
 int mainX() {
     printf("Hello, World!\n");
 
-//    testInitCommandHistory();
+    testSeqOfLastCommand();
+    //    testInitCommandHistory();
 //    testSaveCommandHistory();
 //    testShowCommandHistory();
 
@@ -24,6 +27,18 @@ int mainX() {
     //testCleanCommandHistory();
 
     return 0;
+}
+
+void testSeqOfLastCommand() {
+    addToCommandHistory("eleven", 11);
+    addToCommandHistory("twelve", 12);
+    addToCommandHistory("thirteen", 13);
+    addToCommandHistory("fourteen", 14);
+    addToCommandHistory("fifteen", 15);
+    addToCommandHistory("sixteen", 16);
+    int x = getSeqOfLastCommandFromHistory();
+    showCommandHistory();
+    printf("SEQ: %d", x);
 }
 
 void testCleanCommandHistory() {

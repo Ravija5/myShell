@@ -79,7 +79,7 @@ int main(int argc, char *argv[], char *envp[])
     prompt();
 
     while (fgets(line, MAXLINE, stdin) != NULL) {
-        trim(line);
+        startagain: trim(line);
         if (strcmp(line,"exit") == 0) {
             // if user enters exit
 
@@ -102,25 +102,37 @@ int main(int argc, char *argv[], char *envp[])
             D(printf("NEXT SEQ is : %d\n" , nextSequence));
             getcwd( cwd, sizeof(cwd));
             printf("%s\n", cwd);
-        }else if(strcmp(expanded_line[0],"cd") == 0){ //Implementing cd
+        }else if(strcmp(expanded_line[0],"cd") == 0) { //Implementing cd
 
             addToCommandHistory(tokenised_line[0], nextSequence++);
-            D(printf("NEXT SEQ is : %d\n" , nextSequence));
-            if(expanded_line[1] == NULL){
+            D(printf("NEXT SEQ is : %d\n", nextSequence));
+            if (expanded_line[1] == NULL) {
                 setenv("HOME", HOME_DIR, 1);
-                char* home = getenv("HOME");
+                char *home = getenv("HOME");
                 D(printf("Changed to home directory : %s\n", home));
                 chdir(home);
-            }else{
-                char* dir_name = expanded_line[1];
+            } else {
+                char *dir_name = expanded_line[1];
                 chdir(dir_name);
-                if(chdir(dir_name) != 0){
+                if (chdir(dir_name) != 0) {
                     printf("No such file or directory\n");
-                }else{
+                } else {
                     getcwd(cwd, sizeof(cwd));
                     printf("%s\n", cwd);
                 }
             }
+        }else if(strcmp(expanded_line[0],"!!") == 0){
+            //Execute last command from history.
+            int lastSeq = getSeqOfLastCommandFromHistory();
+            if(lastSeq == -1){
+                D(printf("No command in history\n"));
+            } else{
+                char* commandFromHistory = getCommandFromHistory(lastSeq);
+                strcpy(line, commandFromHistory);
+                D(printf("Executing from history : %s\n", line));
+                goto startagain;
+            }
+
         }else if(strcmp(expanded_line[0],"h") == 0 || strcmp(expanded_line[0],"history") == 0){
 
             //Implementing show history
