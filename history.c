@@ -8,7 +8,7 @@
 #include "history.h"
 #include <errno.h>
 
-#define DEBUG 1
+
 
 #ifdef DEBUG
 #  define D(x) x
@@ -24,12 +24,12 @@
 // array of command lines
 // each is associated with a sequence number
 
-#define MAXHIST 5
+#define MAXHIST 20
 #define MAXSTR  200
 
 #define HISTFILE ".mymysh_history"
 
-#define DEBUG 1
+
 
 
 typedef struct _history_entry {
@@ -109,7 +109,7 @@ void addToCommandHistory(char *cmdLine, int seqNo){
     newEntry.commandLine = cmdLineCopy;
 
     int i = CommandHistory.nEntries;
-    printf("Current entry = %d\n", i);
+    D(printf("Current entry = %d\n", i));
 
     if(i >= MAXHIST){
         //shifting the elements

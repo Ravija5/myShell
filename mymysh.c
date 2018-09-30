@@ -17,7 +17,7 @@
 #include "history.h"
 #include <wordexp.h>
 
-#define DEBUG 1
+
 
 #ifdef DEBUG
 #  define D(x) x
