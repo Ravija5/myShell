@@ -150,6 +150,28 @@ char* getCommandFromHistory(int seqNo){
     return NULL;
 }
 
+/**
+ * Returns the seq number of last command from history.
+ * If there are no commands in history, returns -1.
+ * @return
+ */
+int getSeqOfLastCommandFromHistory(){
+    int lastCommandIndex = -1;
+    if(CommandHistory.nEntries == 0 ){
+        lastCommandIndex = -1;
+    } else if (CommandHistory.nEntries > 0 & CommandHistory.nEntries < MAXHIST) {
+        lastCommandIndex = CommandHistory.nEntries -1;
+    } else{
+        lastCommandIndex = MAXHIST -1;
+    }
+    D(printf("Last Command Index : %d\n", lastCommandIndex));
+    if(lastCommandIndex == -1){
+        return -1;
+    } else{
+        return CommandHistory.commands[lastCommandIndex].seqNumber;
+    }
+}
+
 
 void saveCommandHistory(){
 

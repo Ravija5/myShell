@@ -15,3 +15,4 @@ void saveCommandHistory();
 int initCommandHistory();
 void showCommandHistory();
 void setHistoryFileName();
+int getSeqOfLastCommandFromHistory();
