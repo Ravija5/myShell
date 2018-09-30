@@ -2,7 +2,6 @@
 #include "history.h"
 
 
-
 void testShowCommandHistory();
 
 void testInitCommandHistory();
@@ -15,7 +14,7 @@ void testCleanCommandHistory();
 
 int mainX() {
     printf("Hello, World!\n");
-//
+
 //    testInitCommandHistory();
 //    testSaveCommandHistory();
 //    testShowCommandHistory();
@@ -28,29 +27,29 @@ int mainX() {
 }
 
 void testCleanCommandHistory() {
-    addToCommandHistory("eleven" , 11);
-    addToCommandHistory("twelve" , 12);
-    addToCommandHistory("thirteen" , 13);
+    addToCommandHistory("eleven", 11);
+    addToCommandHistory("twelve", 12);
+    addToCommandHistory("thirteen", 13);
 
     cleanCommandHistory();
 }
 
 void testGetCommandFromHistory() {
-    addToCommandHistory("eleven" , 11);
-    addToCommandHistory("twelve" , 12);
-    addToCommandHistory("thirteen" , 13);
+    addToCommandHistory("eleven", 11);
+    addToCommandHistory("twelve", 12);
+    addToCommandHistory("thirteen", 13);
     getCommandFromHistory(15);
     getCommandFromHistory(13);
 
 }
 
 void testSaveCommandHistory() {
-    addToCommandHistory("eleven" , 11);
-    addToCommandHistory("twelve" , 12);
-    addToCommandHistory("thirteen" , 13);
-    addToCommandHistory("fourteen" , 14);
-    addToCommandHistory("fifteen" , 15);
-    addToCommandHistory("sixteen" , 16);
+    addToCommandHistory("eleven", 11);
+    addToCommandHistory("twelve", 12);
+    addToCommandHistory("thirteen", 13);
+    addToCommandHistory("fourteen", 14);
+    addToCommandHistory("fifteen", 15);
+    addToCommandHistory("sixteen", 16);
     saveCommandHistory();
 }
 
@@ -59,11 +58,11 @@ void testInitCommandHistory() {
 }
 
 void testShowCommandHistory() {
-    addToCommandHistory("one" , 1);
-    addToCommandHistory("two" , 2);
-    addToCommandHistory("three" , 3);
-    addToCommandHistory("four" , 4);
-    addToCommandHistory("five" , 5);
-    addToCommandHistory("six" , 6);
+    addToCommandHistory("one", 1);
+    addToCommandHistory("two", 2);
+    addToCommandHistory("three", 3);
+    addToCommandHistory("four", 4);
+    addToCommandHistory("five", 5);
+    addToCommandHistory("six", 6);
     showCommandHistory();
 }
