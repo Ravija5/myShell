@@ -19,6 +19,8 @@
 
 
 
+#define DEBUG 1
+
 #ifdef DEBUG
 #  define D(x) x
 #else
@@ -104,7 +106,7 @@ int main(int argc, char *argv[], char *envp[])
             printf("%s\n", cwd);
         }else if(strcmp(expanded_line[0],"cd") == 0) { //Implementing cd
 
-            addToCommandHistory(tokenised_line[0], nextSequence++);
+            addToCommandHistory(expanded_line[0], nextSequence++);
             D(printf("NEXT SEQ is : %d\n", nextSequence));
             if (expanded_line[1] == NULL) {
                 setenv("HOME", HOME_DIR, 1);
@@ -114,7 +116,7 @@ int main(int argc, char *argv[], char *envp[])
             } else {
                 char *dir_name = expanded_line[1];
                 chdir(dir_name);
-                if (chdir(dir_name) != 0) {
+                if (chdir(dir_name) == 0) {
                     printf("No such file or directory\n");
                 } else {
                     getcwd(cwd, sizeof(cwd));
@@ -133,11 +135,13 @@ int main(int argc, char *argv[], char *envp[])
                 goto startagain;
             }
 
-        } else if (strcmp(expanded_line[0],"hh") == 0) { //Pattern matches for !45, and extract 45.
-            //Condition for getting a cmd from history
-            //Execute last command from history.
+        } else if (expanded_line[0][0] == '!' && isdigit(expanded_line[0][1])) { //Pattern matches for !45, and extract 45.
+            // Condition for getting a cmd from history
+            // Execute last command from history.
             D(printf("in !SEQ: \n"));
-            int seqFromHistory = 2; //TBD - To get seq number part from !45 string.
+            int seqFromHistory = atoi(expanded_line[0]+1);
+            D(printf("Seq from history = %d\n", seqFromHistory));            
+            //int seqFromHistory = 2; //TBD - To get seq number part from !45 string.
             char *commandFromHistory = getCommandFromHistory(seqFromHistory);
             if(commandFromHistory == NULL){
                 D(printf("No command for this sequence in history\n"));
@@ -148,7 +152,6 @@ int main(int argc, char *argv[], char *envp[])
             }
 
         } else if(strcmp(expanded_line[0],"h") == 0 || strcmp(expanded_line[0],"history") == 0){
-
             //Implementing show history
             showCommandHistory();
         }else {
