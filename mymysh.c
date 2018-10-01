@@ -50,27 +50,27 @@ void execute(char **, char **, char **, char*, int[]);
 // Global Data
 
 static char *const HOME_DIR = "/Users/manishm";
-int nextSequence=0;
+int nextSequence = 0; 
 
 //CD - changing using .. NOTE: maybe cause of setenv in wordexp
 int main(int argc, char *argv[], char *envp[])
 {
-    pid_t pid;   // pid of child process
-    int stat;    // return status of child
-    char **path; // array of directory names
+    pid_t pid;          // pid of child process
+    int stat;           // return status of child
+    char **path;        // array of directory names
     int nextSequence;   // command number
-    int i;       // generic index
+    int i;              // generic index
     char cwd[1024];
+    //int valid = 0;
+    int isBuiltIn = 0;
 
     // set up command PATH from environment variable
     for (i = 0; envp[i] != NULL; i++) {
-        //setting i to be the index of the PATH
         if (strncmp(envp[i], "PATH=", 5) == 0) break;
     }
     if (envp[i] == NULL){
         path = tokenise("/bin:/usr/bin",":");
     }else{
-        // &envp[i][5] skips over "PATH=" prefix
         path = tokenise(&envp[i][5],":");
     }
 
@@ -82,13 +82,12 @@ int main(int argc, char *argv[], char *envp[])
 
     while (fgets(line, MAXLINE, stdin) != NULL) {
         startagain: trim(line);
-        if (strcmp(line,"exit") == 0) {
-            // if user enters exit
 
+        if (strcmp(line,"exit") == 0) {
             break;
         }
+
         if (strcmp(line,"") == 0) {
-            //if user enters an empty string
             prompt();
             continue;
         }
@@ -96,16 +95,60 @@ int main(int argc, char *argv[], char *envp[])
         //Tokenise the command line treating 'whitespace' as delimiter
         char** tokenised_line = tokenise(line, " ");
 
+        //###############//HISTORY SUBSTITUTIONS//###############//
+        
+        //executing the last command from history
+        if(strcmp(tokenised_line[0],"!!") == 0){
+            //Execute last command from history.
+            int lastSeq = getSeqOfLastCommandFromHistory();
+            if(lastSeq == -1){
+                D(printf("Command not found in history\n"));
+            }else{
+                char* commandFromHistory = getCommandFromHistory(lastSeq);
+                strcpy(line, commandFromHistory);
+                D(printf("Executing from history : %s\n", line));
+                goto startagain;
+            }
+        //executing !SeqNo command
+        }else if(tokenised_line[0][0] == '!' && isdigit(tokenised_line[0][1])) {
+            D(printf("in !SEQ: \n"));
+            int seqFromHistory = atoi(tokenised_line[0]+1);
+            D(printf("Seq from history = %d\n", seqFromHistory));            
+            char *commandFromHistory = getCommandFromHistory(seqFromHistory);
+            if(commandFromHistory == NULL){
+                printf("No command #%d\n", seqFromHistory);
+            } else{
+                strcpy(line, commandFromHistory);
+                D(printf("Executing seq number %d from history : %s\n", seqFromHistory, line));
+                goto startagain;
+            }
+        }else if(tokenised_line[0][0] == '!' && !isdigit(tokenised_line[0][1])){
+            printf("Invalid history substitution\n");
+        }
+
+
+        //###############//WILDCARD EXPANSION//###############//
         //Expand the tokenised line for wildcards
         char** expanded_line = fileNameExpand(tokenised_line);
 
-        if(strcmp(expanded_line[0],"pwd") == 0){  //Implementing pwd
-            addToCommandHistory(tokenised_line[0], nextSequence++);
+        //###############//SHELL BUILT-INS//###############//
+
+        //Implementing pwd
+        if(strcmp(expanded_line[0],"pwd") == 0){
+            isBuiltIn = 1; 
+            char entire_command[MAXLINE];
+            for(int i = 0 ; expanded_line[i] != NULL ; i++){
+                strcat(entire_command,expanded_line[i]);
+                strcat(entire_command," ");
+            }
+            D(printf("Entire command is %s\n", entire_command));
+            addToCommandHistory(entire_command, nextSequence++);
             D(printf("NEXT SEQ is : %d\n" , nextSequence));
             getcwd( cwd, sizeof(cwd));
             printf("%s\n", cwd);
-        }else if(strcmp(expanded_line[0],"cd") == 0) { //Implementing cd
-
+        //Implementing cd
+        }else if(strcmp(expanded_line[0],"cd") == 0) { 
+            isBuiltIn = 1; 
             addToCommandHistory(expanded_line[0], nextSequence++);
             D(printf("NEXT SEQ is : %d\n", nextSequence));
             if (expanded_line[1] == NULL) {
@@ -113,49 +156,24 @@ int main(int argc, char *argv[], char *envp[])
                 char *home = getenv("HOME");
                 D(printf("Changed to home directory : %s\n", home));
                 chdir(home);
-            } else {
+            }else{
                 char *dir_name = expanded_line[1];
                 chdir(dir_name);
                 if (chdir(dir_name) == 0) {
                     printf("No such file or directory\n");
-                } else {
+                }else{
                     getcwd(cwd, sizeof(cwd));
                     printf("%s\n", cwd);
                 }
             }
-        }else if(strcmp(expanded_line[0],"!!") == 0){
-            //Execute last command from history.
-            int lastSeq = getSeqOfLastCommandFromHistory();
-            if(lastSeq == -1){
-                D(printf("No command in history\n"));
-            } else{
-                char* commandFromHistory = getCommandFromHistory(lastSeq);
-                strcpy(line, commandFromHistory);
-                D(printf("Executing from history : %s\n", line));
-                goto startagain;
-            }
-
-        } else if (expanded_line[0][0] == '!' && isdigit(expanded_line[0][1])) { //Pattern matches for !45, and extract 45.
-            // Condition for getting a cmd from history
-            // Execute last command from history.
-            D(printf("in !SEQ: \n"));
-            int seqFromHistory = atoi(expanded_line[0]+1);
-            D(printf("Seq from history = %d\n", seqFromHistory));            
-            //int seqFromHistory = 2; //TBD - To get seq number part from !45 string.
-            char *commandFromHistory = getCommandFromHistory(seqFromHistory);
-            if(commandFromHistory == NULL){
-                D(printf("No command for this sequence in history\n"));
-            } else{
-                strcpy(line, commandFromHistory);
-                D(printf("Executing seq number %d from history : %s\n", seqFromHistory, line));
-                goto startagain;
-            }
-
-        } else if(strcmp(expanded_line[0],"h") == 0 || strcmp(expanded_line[0],"history") == 0){
-            //Implementing show history
+        }else if(strcmp(expanded_line[0],"h") == 0 || strcmp(expanded_line[0],"history") == 0){
+            isBuiltIn = 1; 
             showCommandHistory();
-        }else {
+            continue;
+        }else{
+            //###############// I/O REDIRECTION //###############//
 
+            
             //File Descriptor RELATED
             int fd[2];
             // create pipe descriptors
@@ -194,9 +212,9 @@ int main(int argc, char *argv[], char *envp[])
             }
         }
         prompt();
-    }//while ends
 
 
+    }
     saveCommandHistory();
     cleanCommandHistory();
     return(EXIT_SUCCESS);
@@ -244,7 +262,7 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
     }else{
         printf("Running %s ...\n", cmd);
         printf("--------------------\n");
-
+        
 
         close(fd[0]);// CHILD - writing only, so close read-descriptor.
         // send the childID on the write-descriptor.
