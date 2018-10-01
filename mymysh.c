@@ -133,7 +133,21 @@ int main(int argc, char *argv[], char *envp[])
                 goto startagain;
             }
 
-        }else if(strcmp(expanded_line[0],"h") == 0 || strcmp(expanded_line[0],"history") == 0){
+        } else if (strcmp(expanded_line[0],"hh") == 0) { //Pattern matches for !45, and extract 45.
+            //Condition for getting a cmd from history
+            //Execute last command from history.
+            D(printf("in !SEQ: \n"));
+            int seqFromHistory = 2; //TBD - To get seq number part from !45 string.
+            char *commandFromHistory = getCommandFromHistory(seqFromHistory);
+            if(commandFromHistory == NULL){
+                D(printf("No command for this sequence in history\n"));
+            } else{
+                strcpy(line, commandFromHistory);
+                D(printf("Executing seq number %d from history : %s\n", seqFromHistory, line));
+                goto startagain;
+            }
+
+        } else if(strcmp(expanded_line[0],"h") == 0 || strcmp(expanded_line[0],"history") == 0){
 
             //Implementing show history
             showCommandHistory();
