@@ -1,5 +1,8 @@
 # myShell
-TEST Commit
+
+Tested:
+1. Input redirection : cat < file.txt. Make sure the file exists. Run pwd, and create a file in that path.
+   Alternatively, run cat < /tmp/abc.txt by giving full path.
 
 
 Defects:

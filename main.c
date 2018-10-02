@@ -23,7 +23,7 @@ void testOutputRedirect();
 
 void testInputRedirect();
 
-int main() {
+int mainX() {
     printf("Hello, World!\n");
 
 

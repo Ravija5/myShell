@@ -53,7 +53,7 @@ static char *const HOME_DIR = "/Users/manishm";
 int nextSequence = 0; 
 
 //CD - changing using .. NOTE: maybe cause of setenv in wordexp
-int mainX(int argc, char *argv[], char *envp[])
+int main(int argc, char *argv[], char *envp[])
 {
     pid_t pid;          // pid of child process
     int stat;           // return status of child
@@ -281,7 +281,7 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
 
             updated_args[i-2] = NULL;
             for(int j = 0 ; updated_args[j] != NULL ; j++){
-                D(printf("Updated Args[%d] = %s\n", j, updated_args[j]));
+                D(printf("Output redirection -> Updated Args[%d] = %s\n", j, updated_args[j]));
             }
 
             if ((newfd = open(args[last_token_index], O_CREAT|O_TRUNC|O_WRONLY, 0644)) < 0) {
@@ -289,16 +289,45 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
                 exit(1);
             }
 
-            int saved = dup(1);
-            dup2(newfd, 1);
+            int saved = dup(STDOUT_FILENO);
+            dup2(newfd, STDOUT_FILENO);
 
             if(execve(cmd, updated_args, envp) == -1){
                 perror("Exec failed\n");
             }
 
-            dup2(saved, 1); //restoring
+            dup2(saved, STDOUT_FILENO); //restoring
 
-        }else{
+        } else if(i > 2 && strcmp(args[last_token_index - 1], "<") == 0){
+            //Input redirection
+            char* updated_args[i-1];
+
+            for(int j = 0 ; j < (i-2) ; j++){
+                updated_args[j] = args[j];
+            }
+
+            updated_args[i-2] = NULL;
+            for(int j = 0 ; updated_args[j] != NULL ; j++){
+                D(printf("Input redirection -> Updated Args[%d] = %s\n", j, updated_args[j]));
+            }
+
+            if ((newfd = open(args[last_token_index], O_RDONLY)) < 0) {
+                perror(args[last_token_index]);
+                exit(1);
+            }
+
+            int saved = dup(STDIN_FILENO); //Saving original
+            close(STDIN_FILENO);
+
+            dup2(newfd, STDIN_FILENO);
+
+            if(execve(cmd, updated_args, envp) == -1){
+                perror("Exec failed\n");
+            }
+
+            dup2(saved, STDIN_FILENO); //Restoring
+            close(newfd);
+        } else{
             //No redirection
             if(execve(cmd, args, envp) == -1){
                 perror("Exec failed\n");
