@@ -53,7 +53,7 @@ static char *const HOME_DIR = "/Users/manishm";
 int nextSequence = 0; 
 
 //CD - changing using .. NOTE: maybe cause of setenv in wordexp
-int main(int argc, char *argv[], char *envp[])
+int mainX(int argc, char *argv[], char *envp[])
 {
     pid_t pid;          // pid of child process
     int stat;           // return status of child
@@ -272,6 +272,7 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
 
         int newfd;
         if(i > 2 && strcmp(args[last_token_index - 1], ">") == 0){
+            //Output redirection
             char* updated_args[i-1];
 
             for(int j = 0 ; j < (i-2) ; j++){
@@ -298,6 +299,7 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
             dup2(saved, 1); //restoring
 
         }else{
+            //No redirection
             if(execve(cmd, args, envp) == -1){
                 perror("Exec failed\n");
             }
