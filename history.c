@@ -29,9 +29,6 @@
 
 #define HISTFILE ".mymysh_history"
 
-
-
-
 typedef struct _history_entry {
     int   seqNumber;
     char  *commandLine; //a single entry
@@ -159,7 +156,7 @@ int getSeqOfLastCommandFromHistory(){
     int lastCommandIndex = -1;
     if(CommandHistory.nEntries == 0 ){
         lastCommandIndex = -1;
-    } else if (CommandHistory.nEntries > 0 & CommandHistory.nEntries < MAXHIST) {
+    } else if ((CommandHistory.nEntries > 0) && (CommandHistory.nEntries < MAXHIST)) {
         lastCommandIndex = CommandHistory.nEntries -1;
     } else{
         lastCommandIndex = MAXHIST -1;

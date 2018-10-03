@@ -2,6 +2,9 @@
 // Started by John Shepherd, September 2018
 // Completed by Ravija Maheshwari, September/October 2018
 
+//CD
+//CAT on multiple files
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -19,7 +22,7 @@
 
 
 
-#define DEBUG 1
+
 
 #ifdef DEBUG
 #  define D(x) x
@@ -42,6 +45,7 @@ char *findExecutable(char *, char **);
 int isExecutable(char *);
 void prompt(void);
 void execute(char **, char **, char **, char*, int[]);
+void hyphenate();
 
 // Global Constants
 
@@ -61,8 +65,7 @@ int main(int argc, char *argv[], char *envp[])
     int nextSequence;   // command number
     int i;              // generic index
     char cwd[1024];
-    //int valid = 0;
-    int isBuiltIn = 0;
+    
 
     // set up command PATH from environment variable
     for (i = 0; envp[i] != NULL; i++) {
@@ -135,7 +138,6 @@ int main(int argc, char *argv[], char *envp[])
 
         //Implementing pwd
         if(strcmp(expanded_line[0],"pwd") == 0){
-            isBuiltIn = 1; 
             char entire_command[MAXLINE];
             for(int i = 0 ; expanded_line[i] != NULL ; i++){
                 strcat(entire_command,expanded_line[i]);
@@ -148,7 +150,6 @@ int main(int argc, char *argv[], char *envp[])
             printf("%s\n", cwd);
         //Implementing cd
         }else if(strcmp(expanded_line[0],"cd") == 0) { 
-            isBuiltIn = 1; 
             addToCommandHistory(expanded_line[0], nextSequence++);
             D(printf("NEXT SEQ is : %d\n", nextSequence));
             if (expanded_line[1] == NULL) {
@@ -166,10 +167,9 @@ int main(int argc, char *argv[], char *envp[])
                     printf("%s\n", cwd);
                 }
             }
-        }else if(strcmp(expanded_line[0],"h") == 0 || strcmp(expanded_line[0],"history") == 0){
-            isBuiltIn = 1; 
+        }else if(strcmp(expanded_line[0],"h") == 0 || strcmp(expanded_line[0],"history") == 0){   
             showCommandHistory();
-            continue;
+            addToCommandHistory(expanded_line[0], nextSequence++);
         }else{
             //###############// I/O REDIRECTION //###############//
 
@@ -186,10 +186,9 @@ int main(int argc, char *argv[], char *envp[])
                 //Parent process
                 wait(&stat);
                 if (WIFEXITED(stat)) {
-                    printf("--------------------\n");
+                    hyphenate();
                     //If process exited normally, then print it's return status
                     printf("Returns %d\n", WEXITSTATUS(stat));
-
 
                     close(fd[1]); //PARENT - reading only, so close the write-descriptor
                     char recd_message[1000];
@@ -201,7 +200,7 @@ int main(int argc, char *argv[], char *envp[])
                     }
 
                 } else {
-                    printf("--------------------\n");
+                    hyphenate();
                     printf("Child did not terminate with exit\n");
                 }
                 freeTokens(tokenised_line);
@@ -226,7 +225,8 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
 
     int last_token_index = 0;
     int i = 0;
-    while( args[i] != NULL  ){
+   
+    while( args[i] != NULL ){
         last_token_index = i;
         i++;
     }
@@ -256,12 +256,12 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
     }
 
     if (execFound == 0){
-        printf("--------------------\n");
+        hyphenate();
         printf("%s: Command not found\n", args[0]);
         exit (EXIT_FAILURE);
     }else{
         printf("Running %s ...\n", cmd);
-        printf("--------------------\n");
+        hyphenate();
         
 
         close(fd[0]);// CHILD - writing only, so close read-descriptor.
@@ -271,8 +271,10 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
         close(fd[1]);// close the write descriptor
 
         int newfd;
+
+        //Output redirection
         if(i > 2 && strcmp(args[last_token_index - 1], ">") == 0){
-            //Output redirection
+            
             char* updated_args[i-1];
 
             for(int j = 0 ; j < (i-2) ; j++){
@@ -285,6 +287,7 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
             }
 
             if ((newfd = open(args[last_token_index], O_CREAT|O_TRUNC|O_WRONLY, 0644)) < 0) {
+                
                 perror(args[last_token_index]);
                 exit(1);
             }
@@ -293,6 +296,7 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
             dup2(newfd, STDOUT_FILENO);
 
             if(execve(cmd, updated_args, envp) == -1){
+               
                 perror("Exec failed\n");
             }
 
@@ -312,6 +316,7 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
             }
 
             if ((newfd = open(args[last_token_index], O_RDONLY)) < 0) {
+                 
                 perror(args[last_token_index]);
                 exit(1);
             }
@@ -322,6 +327,7 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
             dup2(newfd, STDIN_FILENO);
 
             if(execve(cmd, updated_args, envp) == -1){
+               
                 perror("Exec failed\n");
             }
 
@@ -333,9 +339,12 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
                 perror("Exec failed\n");
             }
         }
+
         exit (EXIT_SUCCESS);
+        
     }
 
+    
 }
 
 
@@ -507,4 +516,8 @@ char** fileNameExpand(char **tokens){
     D(printf("\n"));
 
     return expanded_line;
+}
+
+void hyphenate(){
+    printf("--------------------\n");
 }
