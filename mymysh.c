@@ -2,7 +2,6 @@
 // Started by John Shepherd, September 2018
 // Completed by Ravija Maheshwari, September/October 2018
 
-//CD
 //CAT on multiple files
 
 #include <stdlib.h>
@@ -20,9 +19,7 @@
 #include "history.h"
 #include <wordexp.h>
 
-
-
-
+#define DEBUG 1
 
 #ifdef DEBUG
 #  define D(x) x
@@ -56,7 +53,6 @@ void hyphenate();
 static char *const HOME_DIR = "/Users/manishm";
 int nextSequence = 0; 
 
-//CD - changing using .. NOTE: maybe cause of setenv in wordexp
 int main(int argc, char *argv[], char *envp[])
 {
     pid_t pid;          // pid of child process
@@ -130,11 +126,11 @@ int main(int argc, char *argv[], char *envp[])
         }
 
 
-        //###############//WILDCARD EXPANSION//###############//
+        //###############// WILDCARD EXPANSION //###############//
         //Expand the tokenised line for wildcards
         char** expanded_line = fileNameExpand(tokenised_line);
 
-        //###############//SHELL BUILT-INS//###############//
+        //################// SHELL BUILT-INS //#################//
 
         //Implementing pwd
         if(strcmp(expanded_line[0],"pwd") == 0){
@@ -150,69 +146,77 @@ int main(int argc, char *argv[], char *envp[])
             printf("%s\n", cwd);
         //Implementing cd
         }else if(strcmp(expanded_line[0],"cd") == 0) { 
-            addToCommandHistory(expanded_line[0], nextSequence++);
-            D(printf("NEXT SEQ is : %d\n", nextSequence));
             if (expanded_line[1] == NULL) {
                 setenv("HOME", HOME_DIR, 1);
                 char *home = getenv("HOME");
                 D(printf("Changed to home directory : %s\n", home));
                 chdir(home);
-            }else{
+                addToCommandHistory(expanded_line[0], nextSequence++);
+            }else if(expanded_line[1] != NULL ){
                 char *dir_name = expanded_line[1];
-                chdir(dir_name);
-                if (chdir(dir_name) == 0) {
-                    printf("No such file or directory\n");
-                }else{
+                if(chdir(dir_name) == 0){
                     getcwd(cwd, sizeof(cwd));
                     printf("%s\n", cwd);
-                }
+                    char entire_command[MAXLINE];
+                    sprintf(entire_command,"cd %s", dir_name);
+                    addToCommandHistory(entire_command, nextSequence++);
+                }else{
+                    printf("No such file or directory\n");
+                }     
             }
         }else if(strcmp(expanded_line[0],"h") == 0 || strcmp(expanded_line[0],"history") == 0){   
             showCommandHistory();
             addToCommandHistory(expanded_line[0], nextSequence++);
         }else{
-            //###############// I/O REDIRECTION //###############//
+        //###############// I/O REDIRECTION and COMMAND EXECUTION //###############//
 
-            
-            //File Descriptor RELATED
+            //File descriptor array. (Index 0 -> write , Index 1 -> read)
             int fd[2];
-            // create pipe descriptors
+            // int foundRedirection = 0;
+            // int length = 0;
+            //Pipe error
             if (pipe(fd) == -1){
                 fprintf(stderr, "Pipe Failed" );
                 return 1;
             }
+
+            // for(int i = 0; expanded_line[i] != NULL; i++){
+            //     if( (strcmp(expanded_line[i], ">") == 0) || (strcmp(expanded_line[i], "<") == 0)){
+            //         foundRedirection = 1;
+            //         length++;
+            //     }
+            // }
+            //D(printf("length = %d\n", length));
             int code = pid = fork();
             if (code != 0) {
                 //Parent process
+                printf("in parent hdsfg\n");
                 wait(&stat);
                 if (WIFEXITED(stat)) {
+                    printf("lhegv\n");
                     hyphenate();
-                    //If process exited normally, then print it's return status
                     printf("Returns %d\n", WEXITSTATUS(stat));
+                    close(fd[1]);  //closing write descriptor for parent
+                    char recd_message[MAXLINE];
+                    read(fd[0], recd_message, MAXLINE);
+                    close(fd[0]);  //close the read-descriptor for parent
 
-                    close(fd[1]); //PARENT - reading only, so close the write-descriptor
-                    char recd_message[1000];
-                    read(fd[0], recd_message, 1000);
-                    close(fd[0]); // close the read-descriptor
                     if (WEXITSTATUS(stat) == 0) {
                         D(printf("PARENT received message: %s\n", recd_message));
                         addToCommandHistory(recd_message, nextSequence++);
                     }
-
                 } else {
                     hyphenate();
-                    printf("Child did not terminate with exit\n");
+                    printf("%s: Command not found\n",expanded_line[0]);
                 }
-                freeTokens(tokenised_line);
-
+                freeTokens(tokenised_line);       
             } else {
                 //Child process
+                printf("In child \n");
                 execute(expanded_line, path, envp, line, fd);
             }
         }
         prompt();
-
-
     }
     saveCommandHistory();
     cleanCommandHistory();
@@ -224,24 +228,35 @@ int main(int argc, char *argv[], char *envp[])
 void execute(char **args, char **path, char **envp, char* untokenised_line, int fd[]){
 
     int last_token_index = 0;
-    int i = 0;
-   
-    while( args[i] != NULL ){
-        last_token_index = i;
-        i++;
+    int args_length = 0;
+    // int foundRedirection = 0;
+
+    while( args[args_length] != NULL ){
+        last_token_index = args_length;
+        args_length++;
+        // if((strcmp(args[args_length], ">") == 0) || (strcmp(args[args_length], "<") == 0)) {
+        //     foundRedirection = 1;
+        // }
     }
+    
     D(printf("Second last is %s Token and last token is %s\n", args[last_token_index-1], args[last_token_index]));
+    D(printf("Args length %d\n", args_length));
 
     char* cmd;
     int execFound = 0;
 
+    // if((foundRedirection == 1) && (args_length == 1)){
+    //     printf("Invalid i/o redirection\n");
+    //     EXIT_SUCCESS;
+    // }
+
+    //Checking if args** conatins an executable command
     if(args[0][0] == '/' || args[0][0] == '.'){
         if(isExecutable(args[0])){
             cmd = args[0];
             execFound = 1;
         }
     }else{
-        //Going through each Directory
         for(int i = 0 ; path[i] != NULL; i++){
             char* D = path[i];
             sprintf(D, "%s/%s", path[i], args[0]);
@@ -255,6 +270,7 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
         }
     }
 
+
     if (execFound == 0){
         hyphenate();
         printf("%s: Command not found\n", args[0]);
@@ -262,32 +278,28 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
     }else{
         printf("Running %s ...\n", cmd);
         hyphenate();
-        
-
-        close(fd[0]);// CHILD - writing only, so close read-descriptor.
-        // send the childID on the write-descriptor.
+        close(fd[0]); //Close read descriptor for child
         write(fd[1], untokenised_line, strlen(untokenised_line)+1);
         D(printf("CHILD (%d) send message: %s\n", getpid(), untokenised_line));
-        close(fd[1]);// close the write descriptor
+        close(fd[1]); // close the write descriptor for child
+
 
         int newfd;
-
-        //Output redirection
-        if(i > 2 && strcmp(args[last_token_index - 1], ">") == 0){
+        //Output Re-direction 
+        if(args_length > 2 && strcmp(args[last_token_index - 1], ">") == 0){
             
-            char* updated_args[i-1];
-
-            for(int j = 0 ; j < (i-2) ; j++){
+            //Removing '>' and fileName tokens
+            char* updated_args[args_length-1];
+            for(int j = 0 ; j < (args_length-2) ; j++){
                 updated_args[j] = args[j];
             }
+            updated_args[args_length-2] = NULL;
 
-            updated_args[i-2] = NULL;
             for(int j = 0 ; updated_args[j] != NULL ; j++){
                 D(printf("Output redirection -> Updated Args[%d] = %s\n", j, updated_args[j]));
             }
 
             if ((newfd = open(args[last_token_index], O_CREAT|O_TRUNC|O_WRONLY, 0644)) < 0) {
-                
                 perror(args[last_token_index]);
                 exit(1);
             }
@@ -296,27 +308,28 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
             dup2(newfd, STDOUT_FILENO);
 
             if(execve(cmd, updated_args, envp) == -1){
-               
                 perror("Exec failed\n");
             }
 
             dup2(saved, STDOUT_FILENO); //restoring
 
-        } else if(i > 2 && strcmp(args[last_token_index - 1], "<") == 0){
-            //Input redirection
-            char* updated_args[i-1];
+            
+        // } else if((args_length <= 2) || (foundRedirection)){
+        //     printf("Invalid i/o redirection\n");
+        } else if(args_length > 2 && strcmp(args[last_token_index - 1], "<") == 0){
+            //Input redirection 
+            char* updated_args[args_length-1];
 
-            for(int j = 0 ; j < (i-2) ; j++){
+            for(int j = 0 ; j < (args_length-2) ; j++){
                 updated_args[j] = args[j];
             }
 
-            updated_args[i-2] = NULL;
+            updated_args[args_length-2] = NULL;
             for(int j = 0 ; updated_args[j] != NULL ; j++){
                 D(printf("Input redirection -> Updated Args[%d] = %s\n", j, updated_args[j]));
             }
 
             if ((newfd = open(args[last_token_index], O_RDONLY)) < 0) {
-                 
                 perror(args[last_token_index]);
                 exit(1);
             }
@@ -327,48 +340,21 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
             dup2(newfd, STDIN_FILENO);
 
             if(execve(cmd, updated_args, envp) == -1){
-               
                 perror("Exec failed\n");
             }
 
             dup2(saved, STDIN_FILENO); //Restoring
             close(newfd);
-        } else{
+        // } else if(args_length <= 2) {
+        //     printf("Invalid i/o redirection\n");
+        }else{
             //No redirection
             if(execve(cmd, args, envp) == -1){
                 perror("Exec failed\n");
             }
         }
-
-        exit (EXIT_SUCCESS);
-        
+        exit (EXIT_SUCCESS);    
     }
-
-    
-}
-
-
-// findExecutable: look for executable in PATH
-char *findExecutable(char *cmd, char **path){
-    char executable[MAXLINE];
-    executable[0] = '\0';
-    if (cmd[0] == '/' || cmd[0] == '.') {
-        strcpy(executable, cmd);
-        if (!isExecutable(executable))
-            executable[0] = '\0';
-    }
-    else {
-        int i;
-        for (i = 0; path[i] != NULL; i++) {
-            sprintf(executable, "%s/%s", path[i], cmd);
-            if (isExecutable(executable)) break;
-        }
-        if (path[i] == NULL) executable[0] = '\0';
-    }
-    if (executable[0] == '\0')
-        return NULL;
-    else
-        return strdup(executable);
 }
 
 // isExecutable: check whether this process can execute a file
