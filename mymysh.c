@@ -21,7 +21,8 @@
 #include <wordexp.h>
 
 
-#define DEBUG_X 1
+#define DEBUG_C 1
+
 #ifdef DEBUG
 #  define D(x) x
 #else
@@ -501,18 +502,37 @@ char** fileNameExpand(char **tokens){
     }
 
 
-    //Removing the last element which is the wildcard string
+    int index = 0;
+    char** returned_line = malloc(MAXLINE * sizeof(tokens)) ;
     if(arr_counter > 1 && wildcards_found == 1){
-        expanded_line[arr_counter] = "";
-        arr_counter--;
+        for(int i = 0 ; i < arr_counter ; i++){
+            D(printf("HERE -> %s ", expanded_line[i]));
+            char* star = strchr(expanded_line[i], '*');
+            char* bracket = strchr(expanded_line[i], '[');
+            char* question = strchr(expanded_line[i], '?');
+            if(star != NULL || bracket != NULL || question != NULL){
+                D(printf("%s has a special char", expanded_line[i]));
+                continue;
+            }
+            returned_line[index] = expanded_line[i];
+            index++;
+        }
     }
-
-    expanded_line[arr_counter++] = NULL;
-    D(printf("NEW ARR:\n"));
-    for(int i = 0 ; i < arr_counter ; i++){
-        D(printf("%s ", expanded_line[i]));
+    returned_line[index] = NULL;
+    printf("\nNEW ARR:\n");
+    for(int i = 0 ; i < index ; i++){
+        printf("%s ", returned_line[i]);
     }
     D(printf("\n"));
+
+    //Removing the last element which is the wildcard string
+//    if(arr_counter > 1 && wildcards_found == 1){
+//        expanded_line[arr_counter] = "";
+//        arr_counter--;
+//    }
+//
+//    expanded_line[arr_counter++] = NULL;
+//ls h* > o.txt
 
     return expanded_line;
 }
