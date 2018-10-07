@@ -4,7 +4,6 @@
 
 //CAT on multiple files
 //wc not working
-//what goes into history recheck
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -22,7 +21,7 @@
 #include <wordexp.h>
 
 
-
+#define DEBUG 1
 #ifdef DEBUG
 #  define D(x) x
 #else
@@ -74,7 +73,10 @@ int main(int argc, char *argv[], char *envp[])
     }else{
         path = tokenise(&envp[i][5],":");
     }
-
+    for(int i = 0; path[i]!=NULL ; i++){
+        D(printf("OUTER PATH = <%s>\n", path[i]));
+    }
+    
     // initialise command history
     nextSequence = initCommandHistory() + 1;
 
@@ -223,17 +225,23 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
 
     int last_token_index = 0;
     int args_length = 0;
-
+    D(printf("In execute above while\n"));
     while( args[args_length] != NULL ){
+        D(printf("Args = %s\n", args[args_length]));
         last_token_index = args_length;
         args_length++;
     }
-    D(printf("Second last is %s Token and last token is %s\n", args[last_token_index-1], args[last_token_index]));
+
+    //D(printf("Second last is %s Token and last token is %s\n", args[last_token_index-1], args[last_token_index]));
     D(printf("Args length %d\n", args_length));
 
     char* cmd = NULL;
     int execFound = 0;
     
+    //Checking if args is executable
+    for(int i= 0; path[i] != NULL; i++){
+        D(printf("PATH = <%s>\n", path[i]));
+    }
     if(args[0][0] == '/' || args[0][0] == '.'){
         if(isExecutable(args[0])){
             cmd = args[0];
@@ -242,8 +250,10 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
     }else{
         for(int i = 0 ; path[i] != NULL; i++){
             char* D = path[i];
+            D(printf("Path in execute = %s and args[0] is = %s\n", path[i], args[0] ));
+
             sprintf(D, "%s/%s", path[i], args[0]);
-            if( (strcmp(D,path[i]) == 0) && isExecutable(D) ){
+            if( (strcmp(D,path[i]) == 0) && isExecutable(D)){
                 cmd = D;
                 execFound = 1;
             }
@@ -360,32 +370,11 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
     }
 }
 
-// int findExecutable(char **args, char **path , char* cmd){
-//     int execFound  = 0;
-//     if(args[0][0] == '/' || args[0][0] == '.'){
-//         if(isExecutable(args[0])){
-//             cmd = args[0];
-//             execFound = 1;
-//         }
-//     }else{
-//         for(int i = 0 ; path[i] != NULL; i++){
-//             char* D = path[i];
-//             sprintf(D, "%s/%s", path[i], args[0]);
-//             if( (strcmp(D,path[i]) == 0) && isExecutable(D) ){
-//                 cmd = D;
-//                 execFound = 1;
-//             }
-//             if(execFound == 1){
-//                 break;
-//             }
-//         }
-//     }
-//     return execFound;
-// }
 
 // isExecutable: check whether this process can execute a file
 int isExecutable(char *cmd)
 {
+    D(printf("Command received in isExecutable %s\n", cmd));
     struct stat s;
     // must be accessible
     if (stat(cmd, &s) < 0)
