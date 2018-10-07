@@ -1,4 +1,4 @@
-    // COMP1521 18s2 mymysh ... command history
+   // COMP1521 18s2 mymysh ... command history
     // Implements an abstract data object
     //TBD free up history
 
@@ -32,7 +32,7 @@
 
     HistoryList CommandHistory;
 
-    char *historyFileName = "";
+    char historyFileName[MAXSTR];
 
     /**
     * READ FROM $HOME/.mymysh_history, IF THAT EXISTS
@@ -73,8 +73,7 @@
 
     void setHistoryFileName() {
         char* home = getenv("HOME");
-        char* filename = strcat(home,"/");
-        historyFileName = strcat(filename, HISTFILE);
+        snprintf(historyFileName, sizeof(historyFileName) , "%s/%s", home, HISTFILE);
         D(printf("History path in init : %s\n", historyFileName));
     }
 
@@ -103,6 +102,7 @@
             //printf("Else value of i = %d\n",i);
             CommandHistory.commands[i] = newEntry;
         }
+
         CommandHistory.nEntries++;
     }
 

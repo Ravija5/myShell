@@ -21,7 +21,7 @@
 #include <wordexp.h>
 
 
-#define DEBUG 1
+#define DEBUG_X 1
 #ifdef DEBUG
 #  define D(x) x
 #else
