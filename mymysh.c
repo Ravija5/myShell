@@ -3,6 +3,11 @@
 // Completed by Ravija Maheshwari, September/October 2018
 
 //CAT on multiple files
+//Input redirection error messages : Invalid i/o redirection
+//wc not working
+//No command #400 and then stop it 
+//what goes into history recheck
+//refactoring findExecutable
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -38,7 +43,7 @@ int strContains(char *, char *);
 char **tokenise(char *, char *);
 char **fileNameExpand(char **);
 void freeTokens(char **);
-char *findExecutable(char *, char **);
+int findExecutable(char **, char **, char *);
 int isExecutable(char *);
 void prompt(void);
 void execute(char **, char **, char **, char*, int[]);
@@ -134,24 +139,20 @@ int main(int argc, char *argv[], char *envp[])
 
         //Implementing pwd
         if(strcmp(expanded_line[0],"pwd") == 0){
-            char entire_command[MAXLINE];
-            for(int i = 0 ; expanded_line[i] != NULL ; i++){
-                strcat(entire_command,expanded_line[i]);
-                strcat(entire_command," ");
-            }
-            D(printf("Entire command is %s\n", entire_command));
-            addToCommandHistory(entire_command, nextSequence++);
+            addToCommandHistory(expanded_line[0], nextSequence++);
             D(printf("NEXT SEQ is : %d\n" , nextSequence));
             getcwd( cwd, sizeof(cwd));
             printf("%s\n", cwd);
         //Implementing cd
         }else if(strcmp(expanded_line[0],"cd") == 0) { 
+            //cd changes directory to home directory
             if (expanded_line[1] == NULL) {
                 setenv("HOME", HOME_DIR, 1);
                 char *home = getenv("HOME");
                 D(printf("Changed to home directory : %s\n", home));
                 chdir(home);
                 addToCommandHistory(expanded_line[0], nextSequence++);
+            //cd changes directory to specified directory
             }else if(expanded_line[1] != NULL ){
                 char *dir_name = expanded_line[1];
                 if(chdir(dir_name) == 0){
@@ -161,45 +162,36 @@ int main(int argc, char *argv[], char *envp[])
                     sprintf(entire_command,"cd %s", dir_name);
                     addToCommandHistory(entire_command, nextSequence++);
                 }else{
-                    printf("No such file or directory\n");
+                    printf("%s: No such file or directory\n", dir_name);
                 }     
             }
+        //Implementing 'h' and 'history'
         }else if(strcmp(expanded_line[0],"h") == 0 || strcmp(expanded_line[0],"history") == 0){   
             showCommandHistory();
             addToCommandHistory(expanded_line[0], nextSequence++);
         }else{
-        //###############// I/O REDIRECTION and COMMAND EXECUTION //###############//
+        //###############// COMMAND EXECUTION //###############//
 
             //File descriptor array. (Index 0 -> write , Index 1 -> read)
             int fd[2];
-            // int foundRedirection = 0;
-            // int length = 0;
+          
             //Pipe error
             if (pipe(fd) == -1){
                 fprintf(stderr, "Pipe Failed" );
                 return 1;
             }
-
-            // for(int i = 0; expanded_line[i] != NULL; i++){
-            //     if( (strcmp(expanded_line[i], ">") == 0) || (strcmp(expanded_line[i], "<") == 0)){
-            //         foundRedirection = 1;
-            //         length++;
-            //     }
-            // }
-            //D(printf("length = %d\n", length));
+           
             int code = pid = fork();
             if (code != 0) {
                 //Parent process
-                printf("in parent hdsfg\n");
                 wait(&stat);
                 if (WIFEXITED(stat)) {
-                    printf("lhegv\n");
                     hyphenate();
                     printf("Returns %d\n", WEXITSTATUS(stat));
                     close(fd[1]);  //closing write descriptor for parent
                     char recd_message[MAXLINE];
                     read(fd[0], recd_message, MAXLINE);
-                    close(fd[0]);  //close the read-descriptor for parent
+                    close(fd[0]);  //closing the read-descriptor for parent
 
                     if (WEXITSTATUS(stat) == 0) {
                         D(printf("PARENT received message: %s\n", recd_message));
@@ -212,7 +204,6 @@ int main(int argc, char *argv[], char *envp[])
                 freeTokens(tokenised_line);       
             } else {
                 //Child process
-                printf("In child \n");
                 execute(expanded_line, path, envp, line, fd);
             }
         }
@@ -229,27 +220,17 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
 
     int last_token_index = 0;
     int args_length = 0;
-    // int foundRedirection = 0;
 
     while( args[args_length] != NULL ){
         last_token_index = args_length;
         args_length++;
-        // if((strcmp(args[args_length], ">") == 0) || (strcmp(args[args_length], "<") == 0)) {
-        //     foundRedirection = 1;
-        // }
     }
-    
     D(printf("Second last is %s Token and last token is %s\n", args[last_token_index-1], args[last_token_index]));
     D(printf("Args length %d\n", args_length));
 
-    char* cmd;
+    char* cmd = NULL;
     int execFound = 0;
-
-    // if((foundRedirection == 1) && (args_length == 1)){
-    //     printf("Invalid i/o redirection\n");
-    //     EXIT_SUCCESS;
-    // }
-
+    //execFound = findExecutable(args,path,cmd);
     //Checking if args** conatins an executable command
     if(args[0][0] == '/' || args[0][0] == '.'){
         if(isExecutable(args[0])){
@@ -269,7 +250,6 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
             }
         }
     }
-
 
     if (execFound == 0){
         hyphenate();
@@ -313,9 +293,6 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
 
             dup2(saved, STDOUT_FILENO); //restoring
 
-            
-        // } else if((args_length <= 2) || (foundRedirection)){
-        //     printf("Invalid i/o redirection\n");
         } else if(args_length > 2 && strcmp(args[last_token_index - 1], "<") == 0){
             //Input redirection 
             char* updated_args[args_length-1];
@@ -345,8 +322,6 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
 
             dup2(saved, STDIN_FILENO); //Restoring
             close(newfd);
-        // } else if(args_length <= 2) {
-        //     printf("Invalid i/o redirection\n");
         }else{
             //No redirection
             if(execve(cmd, args, envp) == -1){
@@ -356,6 +331,29 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
         exit (EXIT_SUCCESS);    
     }
 }
+
+// int findExecutable(char **args, char **path , char* cmd){
+//     int execFound  = 0;
+//     if(args[0][0] == '/' || args[0][0] == '.'){
+//         if(isExecutable(args[0])){
+//             cmd = args[0];
+//             execFound = 1;
+//         }
+//     }else{
+//         for(int i = 0 ; path[i] != NULL; i++){
+//             char* D = path[i];
+//             sprintf(D, "%s/%s", path[i], args[0]);
+//             if( (strcmp(D,path[i]) == 0) && isExecutable(D) ){
+//                 cmd = D;
+//                 execFound = 1;
+//             }
+//             if(execFound == 1){
+//                 break;
+//             }
+//         }
+//     }
+//     return execFound;
+// }
 
 // isExecutable: check whether this process can execute a file
 int isExecutable(char *cmd)
@@ -455,7 +453,6 @@ char** fileNameExpand(char **tokens){
     int wildcards_found = 0;
 
     for (int i = 0; tokens[i] != NULL ; i++){
-        D(printf("Tokenised line = %s\n", tokens[i]));
         for(int j = 0 ; tokens[i][j] != '\0'; j++){
             //Go through each char of tokens[i][j]
             int ch = tokens[i][j] ;
@@ -474,15 +471,12 @@ char** fileNameExpand(char **tokens){
                         expanded_line[arr_counter] = wordexpbuf.we_wordv[i];
                         arr_counter++;
                     }
-                    //wordfree(&wordexpbuf);
                 }
                 break;
             }
         }
 
-        D(printf("Outside loops\n"));
         expanded_line[arr_counter] = tokens[i];
-        D(printf("Adding %s to index %d\n", tokens[i], arr_counter));
         arr_counter++;
     }
 
@@ -491,7 +485,6 @@ char** fileNameExpand(char **tokens){
     if(arr_counter > 1 && wildcards_found == 1){
         expanded_line[arr_counter] = "";
         arr_counter--;
-        D(printf("Array count after reduction = %d\n", arr_counter));
     }
 
     expanded_line[arr_counter++] = NULL;

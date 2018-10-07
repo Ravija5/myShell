@@ -9,20 +9,11 @@
     #include <errno.h>
 
 
-
     #ifdef DEBUG
     #  define D(x) x
     #else
     #  define D(x)
     #endif
-
-    // This is defined in string.h
-    // BUT ONLY if you use -std=gnu99
-    //extern char *strdup(const char *s);
-
-    // Command History
-    // array of command lines
-    // each is associated with a sequence number
 
     #define MAXHIST 20
     #define MAXSTR  200
@@ -43,17 +34,10 @@
 
     char *historyFileName = "";
 
-
-    // initCommandHistory()
-    // - initialise the data structure
-    // - read from .history if it exists
-
     /**
     * READ FROM $HOME/.mymysh_history, IF THAT EXISTS
     * RETURNS THE SEQ NUMBER OF LAST COMMAND
     */
-
-
     int initCommandHistory(){
 
         CommandHistory.nEntries = 0;
