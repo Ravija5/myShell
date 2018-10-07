@@ -3,11 +3,9 @@
 // Completed by Ravija Maheshwari, September/October 2018
 
 //CAT on multiple files
-//Input redirection error messages : Invalid i/o redirection
 //wc not working
 //No command #400 and then stop it 
 //what goes into history recheck
-//refactoring findExecutable
 //return statement 
 
 #include <stdlib.h>
@@ -199,11 +197,11 @@ int main(int argc, char *argv[], char *envp[])
                         hyphenate();
                         D(printf("PARENT received message: %s\n", recd_message));
                         addToCommandHistory(recd_message, nextSequence++);
-                    }else{
-                        //Doesnt need to be printed in redircetion case TBD
+                    }
+                    if(WEXITSTATUS(stat) == 0 || WEXITSTATUS(stat) == 1 ) {
                         printf("Returns %d\n", WEXITSTATUS(stat));
                     }
-                
+                          
                 } else {
                     D(printf("parent else \n"));
                     hyphenate();
@@ -239,8 +237,7 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
 
     char* cmd = NULL;
     int execFound = 0;
-    //execFound = findExecutable(args,path,cmd);
-    //Checking if args** conatins an executable command
+    
     if(args[0][0] == '/' || args[0][0] == '.'){
         if(isExecutable(args[0])){
             cmd = args[0];
@@ -265,7 +262,7 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
             D(printf("Found at position %d\n", i+1));
             if(i == 0 || i == (args_length-1) || i != (args_length - 2)){
                 printf("Invalid i/o redirection\n");
-                exit(1);
+                exit(11);
             }
         }
     }
@@ -273,7 +270,8 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
     if (execFound == 0){
         hyphenate();
         printf("%s: Command not found\n", args[0]);
-        exit (EXIT_FAILURE);
+        //Returning 10 when command not found
+        exit (10);
     }else{
 
         int newfd;
