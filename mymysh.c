@@ -8,6 +8,7 @@
 //No command #400 and then stop it 
 //what goes into history recheck
 //refactoring findExecutable
+//return statement 
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -23,6 +24,7 @@
 #include <fcntl.h>
 #include "history.h"
 #include <wordexp.h>
+
 
 
 #ifdef DEBUG
@@ -201,9 +203,7 @@ int main(int argc, char *argv[], char *envp[])
                         //Doesnt need to be printed in redircetion case TBD
                         printf("Returns %d\n", WEXITSTATUS(stat));
                     }
-             
-
-                    
+                
                 } else {
                     D(printf("parent else \n"));
                     hyphenate();
@@ -260,12 +260,21 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
         }
     }
 
+    for(int i = 0; args[i] != NULL ; i++){
+        if( strcmp(args[i], "<") == 0  ||  strcmp(args[i], ">") == 0 ){
+            D(printf("Found at position %d\n", i+1));
+            if(i == 0 || i == (args_length-1) || i != (args_length - 2)){
+                printf("Invalid i/o redirection\n");
+                exit(1);
+            }
+        }
+    }
+    
     if (execFound == 0){
         hyphenate();
         printf("%s: Command not found\n", args[0]);
         exit (EXIT_FAILURE);
     }else{
-        
 
         int newfd;
         //Output Re-direction 
