@@ -148,8 +148,6 @@ int main(int argc, char *argv[], char *envp[])
         }else if(strcmp(expanded_line[0],"cd") == 0) { 
             //cd changes directory to home directory
             if (expanded_line[1] == NULL) {
-                //setenv("HOME", HOME_DIR, 1);
-                //char *home = getenv("HOME");
                 D(printf("Changed to home directory : %s\n", HOME_DIR));
                 printf("%s\n",HOME_DIR);
                 chdir(HOME_DIR);
@@ -161,6 +159,9 @@ int main(int argc, char *argv[], char *envp[])
                     getcwd(cwd, sizeof(cwd));
                     printf("%s\n", cwd);
                     char entire_command[MAXLINE];
+                    if(strcmp(dir_name, HOME_DIR) == 0){
+                        dir_name = "~";
+                    }
                     sprintf(entire_command,"cd %s", dir_name);
                     addToCommandHistory(entire_command, nextSequence++);
                 }else{
