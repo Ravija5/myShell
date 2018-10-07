@@ -24,7 +24,6 @@
 #include "history.h"
 #include <wordexp.h>
 
-#define DEBUG 1
 
 #ifdef DEBUG
 #  define D(x) x
@@ -186,24 +185,34 @@ int main(int argc, char *argv[], char *envp[])
                 //Parent process
                 wait(&stat);
                 if (WIFEXITED(stat)) {
-                    hyphenate();
-                    printf("Returns %d\n", WEXITSTATUS(stat));
+                    D(printf("In parent if\n"));
+                           
                     close(fd[1]);  //closing write descriptor for parent
                     char recd_message[MAXLINE];
                     read(fd[0], recd_message, MAXLINE);
                     close(fd[0]);  //closing the read-descriptor for parent
 
+
                     if (WEXITSTATUS(stat) == 0) {
+                        hyphenate();
                         D(printf("PARENT received message: %s\n", recd_message));
                         addToCommandHistory(recd_message, nextSequence++);
+                    }else{
+                        //Doesnt need to be printed in redircetion case TBD
+                        printf("Returns %d\n", WEXITSTATUS(stat));
                     }
+             
+
+                    
                 } else {
+                    D(printf("parent else \n"));
                     hyphenate();
                     printf("%s: Command not found\n",expanded_line[0]);
                 }
                 freeTokens(tokenised_line);       
             } else {
                 //Child process
+                D(printf("In child\n"));
                 execute(expanded_line, path, envp, line, fd);
             }
         }
@@ -256,13 +265,7 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
         printf("%s: Command not found\n", args[0]);
         exit (EXIT_FAILURE);
     }else{
-        printf("Running %s ...\n", cmd);
-        hyphenate();
-        close(fd[0]); //Close read descriptor for child
-        write(fd[1], untokenised_line, strlen(untokenised_line)+1);
-        D(printf("CHILD (%d) send message: %s\n", getpid(), untokenised_line));
-        close(fd[1]); // close the write descriptor for child
-
+        
 
         int newfd;
         //Output Re-direction 
@@ -280,9 +283,16 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
             }
 
             if ((newfd = open(args[last_token_index], O_CREAT|O_TRUNC|O_WRONLY, 0644)) < 0) {
-                perror(args[last_token_index]);
+                //perror(args[last_token_index]);
                 exit(1);
             }
+
+            printf("Running %s ...\n", cmd);
+            hyphenate();
+            close(fd[0]); //Close read descriptor for child
+            write(fd[1], untokenised_line, strlen(untokenised_line)+1);
+            D(printf("CHILD (%d) send message: %s\n", getpid(), untokenised_line));
+            close(fd[1]); // close the write descriptor for child
 
             int saved = dup(STDOUT_FILENO);
             dup2(newfd, STDOUT_FILENO);
@@ -307,9 +317,17 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
             }
 
             if ((newfd = open(args[last_token_index], O_RDONLY)) < 0) {
-                perror(args[last_token_index]);
+                //perror(args[last_token_index]);
+                printf("Input redirection: No such file or directory\n");
                 exit(1);
             }
+
+            printf("Running %s ...\n", cmd);
+            hyphenate();
+            close(fd[0]); //Close read descriptor for child
+            write(fd[1], untokenised_line, strlen(untokenised_line)+1);
+            D(printf("CHILD (%d) send message: %s\n", getpid(), untokenised_line));
+            close(fd[1]); // close the write descriptor for child
 
             int saved = dup(STDIN_FILENO); //Saving original
             close(STDIN_FILENO);
@@ -324,6 +342,14 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
             close(newfd);
         }else{
             //No redirection
+
+            printf("Running %s ...\n", cmd);
+            hyphenate();
+            close(fd[0]); //Close read descriptor for child
+            write(fd[1], untokenised_line, strlen(untokenised_line)+1);
+            D(printf("CHILD (%d) send message: %s\n", getpid(), untokenised_line));
+            close(fd[1]); // close the write descriptor for child
+
             if(execve(cmd, args, envp) == -1){
                 perror("Exec failed\n");
             }
