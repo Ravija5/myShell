@@ -120,6 +120,7 @@ int main(int argc, char *argv[], char *envp[])
             char *commandFromHistory = getCommandFromHistory(seqFromHistory);
             if(commandFromHistory == NULL){
                 printf("No command #%d\n", seqFromHistory);
+                goto nextprompt;
             } else{
                 strcpy(line, commandFromHistory);
                 D(printf("Executing seq number %d from history : %s\n", seqFromHistory, line));
@@ -214,7 +215,7 @@ int main(int argc, char *argv[], char *envp[])
                 execute(expanded_line, path, envp, line, fd);
             }
         }
-        prompt();
+        nextprompt: prompt();
     }
     saveCommandHistory();
     cleanCommandHistory();
