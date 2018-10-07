@@ -51,11 +51,12 @@ void hyphenate();
 
 // Global Data
 
-static char *const HOME_DIR = "/Users/manishm";
+char* HOME_DIR = "";
 int nextSequence = 0; 
 
 int main(int argc, char *argv[], char *envp[])
 {
+    HOME_DIR = getenv("HOME");
     pid_t pid;          // pid of child process
     int stat;           // return status of child
     char **path;        // array of directory names
@@ -147,10 +148,11 @@ int main(int argc, char *argv[], char *envp[])
         }else if(strcmp(expanded_line[0],"cd") == 0) { 
             //cd changes directory to home directory
             if (expanded_line[1] == NULL) {
-                setenv("HOME", HOME_DIR, 1);
-                char *home = getenv("HOME");
-                D(printf("Changed to home directory : %s\n", home));
-                chdir(home);
+                //setenv("HOME", HOME_DIR, 1);
+                //char *home = getenv("HOME");
+                D(printf("Changed to home directory : %s\n", HOME_DIR));
+                printf("%s\n",HOME_DIR);
+                chdir(HOME_DIR);
                 addToCommandHistory(expanded_line[0], nextSequence++);
             //cd changes directory to specified directory
             }else if(expanded_line[1] != NULL ){
@@ -476,7 +478,7 @@ char** fileNameExpand(char **tokens){
             if(ch == '*' || ch == '?' || ch == '[' || ch == '~'){
                 //expand the wildcard
                 wildcards_found = 1;
-                setenv("HOME", HOME_DIR, 1);
+                //setenv("HOME", HOME_DIR, 1);
                 wordexp_t wordexpbuf;
                 int returnVal = wordexp(tokens[i], &wordexpbuf , 0);
 
