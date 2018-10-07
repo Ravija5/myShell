@@ -194,11 +194,11 @@ int main(int argc, char *argv[], char *envp[])
 
 
                     if (WEXITSTATUS(stat) == 0) {
-                        hyphenate();
                         D(printf("PARENT received message: %s\n", recd_message));
                         addToCommandHistory(recd_message, nextSequence++);
                     }
                     if(WEXITSTATUS(stat) == 0 || WEXITSTATUS(stat) == 1 ) {
+                        hyphenate();
                         printf("Returns %d\n", WEXITSTATUS(stat));
                     }
                           
@@ -268,7 +268,6 @@ void execute(char **args, char **path, char **envp, char* untokenised_line, int 
     }
     
     if (execFound == 0){
-        hyphenate();
         printf("%s: Command not found\n", args[0]);
         //Returning 10 when command not found
         exit (10);
