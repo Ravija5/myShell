@@ -4,9 +4,7 @@
 
 //CAT on multiple files
 //wc not working
-//No command #400 and then stop it 
 //what goes into history recheck
-//return statement 
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -193,12 +191,9 @@ int main(int argc, char *argv[], char *envp[])
                     read(fd[0], recd_message, MAXLINE);
                     close(fd[0]);  //closing the read-descriptor for parent
 
-
-                    if (WEXITSTATUS(stat) == 0) {
+                    if(WEXITSTATUS(stat) == 0 || WEXITSTATUS(stat) == 1 ) {
                         D(printf("PARENT received message: %s\n", recd_message));
                         addToCommandHistory(recd_message, nextSequence++);
-                    }
-                    if(WEXITSTATUS(stat) == 0 || WEXITSTATUS(stat) == 1 ) {
                         hyphenate();
                         printf("Returns %d\n", WEXITSTATUS(stat));
                     }
