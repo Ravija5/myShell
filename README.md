@@ -1,8 +1,11 @@
-# myShell
+# myShell (Code in progress)
 
 Tested:
-1. Input redirection : cat < file.txt. Make sure the file exists. Run pwd, and create a file in that path.
-   Alternatively, run cat < /tmp/abc.txt by giving full path.
+1. Input redirection : cat < file.txt.
+2. pwd
+3. cd
+4. ls
+5. cat
 
 
 Defects:
